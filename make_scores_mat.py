@@ -3,11 +3,15 @@
 import sys, re
 import numpy as np
 import pandas as pd
+import pyarrow.csv as pa_csv
 
 
 # IMPORT data passed through the 1st argument;followed by the Gene_ENSGid as the 2nd
 
-data=pd.read_csv(sys.argv[1],sep='\t',header=0,dtype='object')
+parse_options = pa_csv.ParseOptions(delimiter='\t')
+read_options=pa_csv.ReadOptions(block_size=1e9)
+data = pa_csv.read_csv(sys.argv[1], parse_options=parse_options, read_options = read_options)
+data = data.to_pandas()
 gene=sys.argv[2]
 CADD=sys.argv[3]
 header=data.columns.values
