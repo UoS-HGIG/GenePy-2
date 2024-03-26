@@ -1,297 +1,191 @@
-# -*- coding: utf-8 -*-
-
 import sys, re
 import numpy as np
 import pandas as pd
-import time
-from numba import njit, cuda
+from numba import njit, cuda, prange
 import math
 import pyarrow.csv as pa_csv
+from typing import Tuple
+import argparse
+import time
 
-threads_per_block = 256
 
-@njit(nopython=True)
-def zeroing_with_numba(db1,to_be_zeroed):
+def read_meta_file(filepath: str) -> pd.DataFrame:
 
+    parse_options = pa_csv.ParseOptions(delimiter="\t")
+    read_options = pa_csv.ReadOptions(block_size=1e9)
+    data = pa_csv.read_csv(
+            filepath, parse_options=parse_options, read_options=read_options
+        )
+    data = data.to_pandas()
+    return data
+
+
+def get_scores(data: np.array) -> np.array:
+    ##cadd score; reformat CADD range to 0-1
+    ## the UKBB 200k cohort raw variant has CADD16 ranges from -18.793437 to 19.100986 including the prescore and permutated score (GRCh38_v1.6;VEP 100_GRCh38)
+    scores = data[:, 16:25]
+    scores = scores.astype("float")
+    scores = (scores - (-19.811548)) / (25.028523 - (-19.811548))
+    scores[np.isnan(scores)] = 0
+    s0 = scores[:, 0]
+    scores = np.insert(scores, 0, s0, axis=1)
+    scores[np.isnan(scores)] = 0
+
+    return scores
+
+
+def get_allele_freq(data: np.array) -> np.array:
+    ##allele frequency as it is in the UKBB cohort; this is currently based on the raw pVCF data.
+    af = data[:, 6:15]
+    af = af.astype("float")
+    ##the ref allele frequency
+    af0 = 1 - np.nansum(af, axis=1)
+    af0 = af0[:, np.newaxis]
+    af[np.isnan(af)] = 1
+    af = np.hstack([af0, af])
+
+    return af
+
+
+def format_data(data: pd.DataFrame) -> Tuple[np.array, np.array, np.array, np.array]:
+    header = data.columns.values
+    data = np.array(data)
+    scores = get_scores(data=data)
+    af = get_allele_freq(data=data)
+    samples_header = header[26:]
+    samples = data[:, 26:]
+    samples[samples == "0"] = "0/0"
+    samples = samples.astype("str")
+
+    return scores, af, samples, samples_header
+
+
+def parse_command_line_args():
+    parser = argparse.ArgumentParser(description="GenePy2 - Make score matrix")
+    parser.add_argument("--gene", type=str, help="Gene name", required=True)
+    parser.add_argument("--cadd", type=str, help="CADD score", required=True)
+    parser.add_argument("--gpu", action="store_true", help="Use GPU")
+    parser.add_argument(
+        "--gpu-threads",
+        type=int,
+        help="Number of threads in each GPU block",
+        nargs="?",
+        const=256,
+        default=256,
+    )
+    args = parser.parse_args()
+    return args
+
+
+@njit()
+def get_score(S: np.array, af: np.array, db1: np.array, s_int: np.array):
     for i in range(db1.shape[0]):
-        for j in range(db1.shape[1]):
-            if db1[i, j] in to_be_zeroed:
-                db1[i, j] = 0.0
+        for j in prange(db1.shape[1]):
+            db1[i][j] = (
+                (S[i, s_int[i][j][0]] + S[i, s_int[i][j][1]])
+                * 0.5
+                * (-math.log10(af[i, s_int[i][j][0]] * af[i, s_int[i][j][1]]))
+            )
+    return db1
 
 
 @cuda.jit
-def s_af0_af_func_kernel(S, af, af0, db1, i, mask_indices):
-    start = cuda.grid(1) 
+def get_score_kernel(S_d, db1_d, af_d, s_int_d):
+    start = cuda.grid(1)
     stride = cuda.gridsize(1)
-     
-    for r in range(start, mask_indices.shape[0], stride):
-        id_r = mask_indices[r, 0]
-        id_c = mask_indices[r,1]
-        db1[id_r,id_c] = S[id_r, i] * (-math.log10(af0[id_r] * af[id_r, i]))
-    
-    mask_indices = None
 
-def s_af0_ad_func_dum(S, af, af0, db1, i, mask_indices):
-    for r in range(mask_indices.shape[0]):
-        id_r = mask_indices[r, 0]
-        id_c = mask_indices[r,1]
-        db1[id_r,id_c] = S[id_r, i] * (-math.log10(af0[id_r] * af[id_r, i]))
+    for i in range(db1_d.shape[0]):
+        for j in range(start, db1_d.shape[1], stride):
 
-def s_af0_af_func(mask, S, af, af0, db1, i):
-    #print("indices",np.where(mask))
-    mask_indices = np.column_stack(np.where(mask))
-    if mask_indices.size == 0:
-        return
-    #print("stacked indices",mask_indices)
-    num_rows_mask = mask_indices.shape[0]
-    mask_indices = cuda.to_device(mask_indices)
-    func_threads = min(threads_per_block, num_rows_mask)
-    blockspergrid = (num_rows_mask + func_threads - 1) // func_threads
-    print(num_rows_mask,blockspergrid, func_threads)
-    s_af0_af_func_kernel[blockspergrid, func_threads](S, af, af0, db1, i, mask_indices)
-    #s_af0_af_func_kernel[1,1](S, af, af0, db1, i, mask_indices)#s_af0_ad_func_dum(S, af, af0, db1, i, mask_indices)
-    mask_indices = None
-
-def S_af0_af_num(i, S, af, af0, db1, samples):
-    masks = [samples == '0/'+str(i+1), samples == str(i+1)+'/0']
-    for mask in masks:
-        s_af0_af_func(mask, S, af, af0, db1, i)
+            db1_d[i][j] = (
+                (S_d[i, s_int_d[i][j][0]] + S_d[i, s_int_d[i][j][1]])
+                * 0.5
+                * (-math.log10(af_d[i, s_int_d[i][j][0]] * af_d[i, s_int_d[i][j][1]]))
+            )
 
 
-def S_af0_af(i: int, S: np.array, af: np.array, af0: np.array, db1: np.array, samples: np.array):
-    def _func(mask):
-        db1[mask]=S[np.where(mask)[0],i]*(-np.log10((af0[np.where(mask)[0]])*(af[np.where(mask)[0],i])))
-    masks= [samples == '0/'+str(i+1),samples == str(i+1)+'/0']
-    for mask in masks:
-        _func(mask)
+def get_scores_cuda(
+    scores: np.array,
+    af: np.array,
+    db1: np.array,
+    samples_int: np.array,
+    threads_per_block: int,
+):
 
-def S_af_af(i: int, S: np.array, af: np.array, db1: np.array, samples:np.array):
-    mask = samples == str(i+1)+'/'+str(i+1)
-    db1[mask]=S[np.where(mask)[0],i]*(-np.log10((af[np.where(mask)[0],i])*(af[np.where(mask)[0],i])))
+    num_cols = db1.shape[1]
+    S_d = cuda.to_device(np.ascontiguousarray(scores))
+    db1_d = cuda.to_device(np.ascontiguousarray(db1))
+    af_d = cuda.to_device(np.ascontiguousarray(af))
+    s_int_d = cuda.to_device(np.ascontiguousarray( samples_int))
 
+    blockspergrid = (num_cols + threads_per_block - 1) // threads_per_block
+    get_score_kernel[blockspergrid, threads_per_block](
+        S_d, db1_d, af_d, s_int_d
+    )
 
-@cuda.jit
-def s_af_af_func_kernel(S, af, db1, i, mask_indices):
-    start = cuda.grid(1) 
-    stride = cuda.gridsize(1)
-     
-    for r in range(start, mask_indices.shape[0], stride):
-        id_r = mask_indices[r, 0]
-        id_c = mask_indices[r,1]
-        db1[id_r,id_c]=S[id_r,i]*(-math.log10((af[id_r,i])*(af[id_r,i])))
-    
-    mask_indices = None
+    S_d = None
+    af_d = None
+    s_int_d = None
+    db1 = db1_d.copy_to_host()
+    db1_d = None
 
-
-def s_af_af_func(mask, S, af, db1, i):
-    mask_indices = np.column_stack(np.where(mask))
-    if mask_indices.size == 0:
-        return
-    #print("stacked indices",mask_indices)
-    num_rows_mask = mask_indices.shape[0]
-    mask_indices = cuda.to_device(mask_indices)
-    func_threads = min(threads_per_block, num_rows_mask)
-    blockspergrid = (num_rows_mask + func_threads - 1) // func_threads
-    print(num_rows_mask,blockspergrid, func_threads)
-
-    s_af_af_func_kernel[blockspergrid, func_threads](S, af, db1, i, mask_indices)
-    mask_indices = None
-
-def S_af_af_num(i, S, af, db1, samples):
-    mask = samples == str(i+1)+'/'+str(i+1)
-    s_af_af_func(mask, S, af, db1, i)
+    return db1
 
 
-def S_S_af_af_2(i: int, S: np.array, af: np.array, db1: np.array,samples: np.array):
-
-    for j in range(i+1,9):
-        masks = [samples == str(i+1)+'/'+str(j+1),samples== str(i+1)+'/'+str(j+1)]
-
-        for mask in masks:
-            db1[mask]=((S[np.where(mask)[0],i]+S[np.where(mask)[0],j])/2)*(-np.log10((af[np.where(mask)[0],i])*(af[np.where(mask)[0],j])))
-
-@cuda.jit
-def s_s_af_af_2_func_kernel(S, af, db1, i,j, mask_indices):
-    start = cuda.grid(1) 
-    stride = cuda.gridsize(1)
-    #rows_per_block = (mask_indices.shape[0] + threads_per_block - 1) // threads_per_block
-     
-    for r in range(start, mask_indices.shape[0], stride):
-        id_r = mask_indices[r, 0]
-        id_c = mask_indices[r,1]
-        db1[id_r,id_c]=((S[id_r,i]+S[id_r,j])/2)*(-math.log10((af[id_r,i])*(af[id_r,j])))
-    
-    mask_indices = None
+def index(data: np.array) -> np.array:
+    int_data = data.ravel().view("uint8")[::4]
+    int_data = int_data.reshape(data.shape[0], -1, 3) - 48
+    int_data[(int_data[:, :, 2] > 253) | (int_data[:, :, 0] > 253)] = [0, 0, 0]
+    int_data = int_data[:, :, [0, 2]].reshape(int_data.shape[0], int_data.shape[1], 2)
+    return int_data.astype("uint8")
 
 
-def s_s_af_af_2_func(mask, S, af, db1, i,j):
-    mask_indices = np.column_stack(np.where(mask))
-    if mask_indices.size == 0:
-        return
-    #print("stacked indices",mask_indices)
-    num_rows_mask = mask_indices.shape[0]
-    mask_indices = cuda.to_device(mask_indices)
-    func_threads = min(threads_per_block, num_rows_mask)
-    blockspergrid = (num_rows_mask + func_threads - 1) // func_threads
-    print(num_rows_mask,blockspergrid, func_threads)
-
-    s_s_af_af_2_func_kernel[blockspergrid, func_threads](S, af, db1, i, j, mask_indices)
-    mask_indices = None
-
-def S_S_af_af_2_num(i, S, af, db1, samples):
-    for j in range(i+1,9):
-        masks = [samples == str(i+1)+'/'+str(j+1),samples== str(i+1)+'/'+str(j+1)]
-        for mask in masks:
-            s_s_af_af_2_func(mask,S,af,db1,i,j)
-
-def S_S_af_af_1(i: int, S: np.array, af: np.array, db1: np.array,samples: np.array):
-    for j in range(i+1,9):
-        mask = samples == str(i+1)+'/'+str(j+1)
-        db1[mask]=((S[np.where(mask)[0],i]+S[np.where(mask)[0],j])/2) * (-math.log10((af[np.where(mask)[0],i])*(af[np.where(mask)[0],j])))
-
-
-@cuda.jit
-def s_s_af_af_1_func_kernel(S, af, db1, i,j, mask_indices):
-    start = cuda.grid(1) 
-    stride = cuda.gridsize(1)
-    #rows_per_block = (mask_indices.shape[0] + threads_per_block - 1) // threads_per_block
-     
-    for r in range(start, mask_indices.shape[0], stride):
-        id_r = mask_indices[r, 0]
-        id_c = mask_indices[r,1]
-        db1[id_r,id_c]=((S[id_r,i]+S[id_r,j])/2)*(-math.log10((af[id_r,i])*(af[id_r,j])))
-    
-    mask_indices = None
-
-
-def s_s_af_af_1_func(mask, S, af, db1, i,j):
-    mask_indices = np.column_stack(np.where(mask))
-    if mask_indices.size == 0:
-        return
-    #print("stacked indices",mask_indices)
-    num_rows_mask = mask_indices.shape[0]
-    mask_indices = cuda.to_device(mask_indices)
-    func_threads = min(threads_per_block, num_rows_mask)
-    blockspergrid = (num_rows_mask + func_threads - 1) // func_threads
-    print(num_rows_mask,blockspergrid, func_threads)
-
-    s_s_af_af_1_func_kernel[blockspergrid, func_threads](S, af, db1, i, j, mask_indices)
-    mask_indices = None
-
-def S_S_af_af_1_num(i, S, af, db1, samples):
-    for j in range(i+1,9):
-        mask = samples == str(i+1)+'/'+str(j+1)
-        s_s_af_af_1_func(mask,S,af,db1,i,j)
-
-# IMPORT data passed through the 1st argument;followed by the Gene_ENSGid as the 2nd
-#data=pd.read_csv(sys.argv[1],sep='\t',header=0,dtype='object',engine="pyarrow")
-t0=time.time()
-parse_options = pa_csv.ParseOptions(delimiter='\t')
-read_options=pa_csv.ReadOptions(block_size=1e9)
-data = pa_csv.read_csv(sys.argv[1], parse_options=parse_options, read_options = read_options)
-data = data.to_pandas()
-t1=time.time()
-#data = data.to_numpy()
-gene=sys.argv[2]
-CADD=sys.argv[3]
-header=data.columns.values
-print(f"Time to read: {gene} {t1-t0}")
-
-data = np.array(data)
-##cadd score; reformat CADD range to 0-1
-## the UKBB 200k cohort raw variant has CADD16 ranges from -18.793437 to 19.100986 including the prescore and permutated score (GRCh38_v1.6;VEP 100_GRCh38)
-scores = data[:,16:25]
-scores = scores.astype('float')
-scores = (scores - (-19.811548))/(25.028523-(-19.811548))
-scores[np.isnan(scores)] = 0
-
-
-##allele frequency as it is in the UKBB cohort; this is currently based on the raw pVCF data.
-af = data[:,6:15]
-af = af.astype('float')
-##the ref allele frequency
-af0 = 1-np.nansum(af,axis=1)
-af[np.isnan(af)] = 1
-samples=data[:,26:]
-samples_header=header[26:]
-print("FInished wrangling")
-threads_per_block = 256
-len_samples = len(samples)
-#print("sample length",len(samples))
-blockspergrid = (len_samples + (threads_per_block - 1)) // threads_per_block
-#print("blocks",blockspergrid, threads_per_block, len_samples)
-
-##Clalculate GenePy score; assuming genotype 0/0 has a score=0
 def nan_if(arr, value):
     return np.where(arr == value, np.nan, arr)
 
-def score_db(samples,scores,af0,af):
-    
-    db1=np.zeros_like(samples, dtype=float)
-    S_device =cuda.to_device(scores)
-    db1_device = cuda.to_device(db1)
-    af0_device = cuda.to_device(af0)
-    af_device = cuda.to_device(af)
 
-    out1=[]
-    to_be_zeroed = [ '0/0', '0',  './0', './.', './1', './2', './3', 
-                    './4', './5', './6', './7', './8', './9', '10/', 
-                    '11/', '12/', '13/', '14/', '15/', '16/', '17/', 
-                    '18/', '19/', '20/', '21/', '22/', '23/', '24/', 
-                    '25/', '26/', '27/','28/', '30/']
-
-    t0=time.time()
-    zeroing_with_numba(db1,to_be_zeroed)
-    t1=time.time()
-    print("Time to zero {t1-t0}")
-    t0_l=time.time()
-    for index in range(9):
-        t0 = time.time()
-        S_af0_af_num(index,S_device,af_device,af0_device,db1_device,samples)
-        t1 = time.time()
-
-        print(f"S_af0_af Loop {index} took {t1-t0}")
-        t0=time.time()
-        S_af_af_num(index,S_device,af_device,db1_device,samples)
-        t1 = time.time()
-        print(f"S_af_af Loop {index} took {t1-t0}")
-        t0=time.time()
-        S_S_af_af_2_num(index,S_device,af_device,db1_device,samples)
-        t1=time.time()
-        print(f"S_S_af_af_2 Loop {index} took {t1-t0}")
-    for i in range(3,9):
-        t0=time.time()
-        S_S_af_af_1_num(i,S_device,af_device,db1_device,samples)
-        t1=time.time()
-        print(f"S_S_af_af_1 Loop {i} took {t1-t0}")
-    t1_l=time.time()
-    print(f"total loop time {t1_l-t0_l}")
-    #    S_af_af_num(index,S,af,db1,samples)
-
-
-
-
-
-    #    S_S_af_af_2_num(index,S,af,db1,samples)
-    #for i in range(3,9):
-    #    S_S_af_af_1_num(i,S,af,db1,samples)
-    db1 = db1_device.copy_to_host()
-    db1_device = None
-    out1=np.nansum(nan_if(db1,'0.0'),axis=0)
-    gg = np.array([gene]*len(samples_header))
-    U = np.vstack((samples_header,out1,gg)).T
-    #print("U",U.shape)
+def score_db(
+    samples: np.array,
+    scores: np.array,
+    af: np.array,
+    gpu: bool,
+    gpu_threads_per_block: int,
+):
+    samples_int = index(samples)
+    db1 = np.zeros_like(samples, dtype=float)
+    if gpu:
+        db1 = get_scores_cuda(
+            scores, af, db1, samples_int, threads_per_block=gpu_threads_per_block
+        )
+    else:
+        db1 = get_score(scores, af, db1, samples_int)
+    db1[np.all(samples_int == np.asarray([0.0, 0.0], dtype="uint8"), axis=-1)] = 0.0
+    out1 = np.nansum(nan_if(db1, "0.0"), axis=0)
+    gg = np.array([gene] * len(samples_header))
+    U = np.vstack((samples_header, out1, gg)).T
     return U
-#%%
-
-if (np.isnan(scores).sum()) < (scores.shape[0]): #compute metascores if at least 1 variant
-    #print("In the if")
-    t0=time.time()
-    U = score_db(samples,scores,af0,af)
-    t1=time.time()
-    print(f"Time for score_db: {gene}: {t1-t0}")
-    np.savetxt('./'+gene+'_'+CADD+'_matrix',U, fmt='%s', delimiter='\t')
 
 
+if __name__ == "__main__":
+    args = parse_command_line_args()
+    meta_file = args.gene + ".meta"
+    gene = args.gene
+    cadd = args.cadd
+    gpu = args.gpu
+    gpu_threads_per_block = args.gpu_threads
+    data = read_meta_file(filepath=meta_file)
+    scores, af, data, samples_header = format_data(data=data)
 
-
+    if (np.isnan(scores).sum()) < (
+        scores.shape[0]
+    ):  # compute metascores if at least 1 variant
+        U = score_db(
+            samples=data,
+            scores=scores,
+            af=af,
+            gpu=gpu,
+            gpu_threads_per_block=gpu_threads_per_block,
+        )
+        np.savetxt(
+            "./" + args.gene + "_" + args.cadd + "_matrix", U, fmt="%s", delimiter="\t"
+        )

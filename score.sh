@@ -20,7 +20,7 @@ cat ../${1} | while read i; do
     cp ../header.meta ${i}.meta
     grep -w "$i" ../meta_${2}.txt |\
         awk -F"\t" '{OFS=FS}{for (i=7;i<=16;i++) if(length($i)<1 || $i==0) $i="3.98e-6"}1' >> ${i}.meta
-    python make_scores_mat.py ${i}.meta $i $2
+    python make_scores_mat.py --gene ${i} --cadd $2
     rm ${i}.meta
 done
 
