@@ -1,4 +1,3 @@
-import sys, re
 import numpy as np
 import pandas as pd
 from numba import njit, cuda, prange
@@ -6,7 +5,6 @@ import math
 import pyarrow.csv as pa_csv
 from typing import Tuple
 import argparse
-import time
 
 
 def read_meta_file(filepath: str) -> pd.DataFrame:
