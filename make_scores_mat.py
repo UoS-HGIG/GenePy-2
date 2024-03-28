@@ -12,8 +12,8 @@ def read_meta_file(filepath: str) -> pd.DataFrame:
     parse_options = pa_csv.ParseOptions(delimiter="\t")
     read_options = pa_csv.ReadOptions(block_size=1e9)
     data = pa_csv.read_csv(
-            filepath, parse_options=parse_options, read_options=read_options
-        )
+        filepath, parse_options=parse_options, read_options=read_options
+    )
     data = data.to_pandas()
     return data
 
@@ -79,11 +79,21 @@ def parse_command_line_args():
 def get_score(S: np.array, af: np.array, db1: np.array, s_int: np.array):
     for i in range(db1.shape[0]):
         for j in prange(db1.shape[1]):
-            db1[i][j] = (
-                (S[i, s_int[i][j][0]] + S[i, s_int[i][j][1]])
-                * 0.5
-                * (-math.log10(af[i, s_int[i][j][0]] * af[i, s_int[i][j][1]]))
-            )
+            if s_int[i, j, 0] == 0:
+                db1[i][j] = S[i, s_int[i][j][1]] * (
+                    -math.log10(af[i, s_int[i][j][0]] * af[i, s_int[i][j][1]])
+                )
+
+            elif s_int[i, j, 1] == 0:
+                db1[i][j] = S[i, s_int[i][j][0]] * (
+                    -math.log10(af[i, s_int[i][j][0]] * af[i, s_int[i][j][1]])
+                )
+            else:
+                db1[i][j] = (
+                    (S[i, s_int[i][j][0]] + S[i, s_int[i][j][1]])
+                    * 0.5
+                    * (-math.log10(af[i, s_int[i][j][0]] * af[i, s_int[i][j][1]]))
+                )
     return db1
 
 
@@ -95,11 +105,21 @@ def get_score_kernel(S_d, db1_d, af_d, s_int_d):
     for i in range(db1_d.shape[0]):
         for j in range(start, db1_d.shape[1], stride):
 
-            db1_d[i][j] = (
-                (S_d[i, s_int_d[i][j][0]] + S_d[i, s_int_d[i][j][1]])
-                * 0.5
-                * (-math.log10(af_d[i, s_int_d[i][j][0]] * af_d[i, s_int_d[i][j][1]]))
-            )
+            if s_int_d[i, j, 0] == 0:
+                db1_d[i][j] = S_d[i, s_int_d[i][j][1]] * (
+                    -math.log10(af[i, s_int_d[i][j][0]] * af[i, s_int_d[i][j][1]])
+                )
+
+            elif s_int_d[i, j, 1] == 0:
+                db1_d[i][j] = S_d[i, s_int_d[i][j][0]] * (
+                    -math.log10(af[i, s_int_d[i][j][0]] * af[i, s_int_d[i][j][1]])
+                )
+            else:
+                db1_d[i][j] = (
+                    (S_d[i, s_int_d[i][j][0]] + S_d[i, s_int_d[i][j][1]])
+                    * 0.5
+                    * (-math.log10(af[i, s_int_d[i][j][0]] * af[i, s_int_d[i][j][1]]))
+                )
 
 
 def get_scores_cuda(
@@ -114,12 +134,10 @@ def get_scores_cuda(
     S_d = cuda.to_device(np.ascontiguousarray(scores))
     db1_d = cuda.to_device(np.ascontiguousarray(db1))
     af_d = cuda.to_device(np.ascontiguousarray(af))
-    s_int_d = cuda.to_device(np.ascontiguousarray( samples_int))
+    s_int_d = cuda.to_device(np.ascontiguousarray(samples_int))
 
     blockspergrid = (num_cols + threads_per_block - 1) // threads_per_block
-    get_score_kernel[blockspergrid, threads_per_block](
-        S_d, db1_d, af_d, s_int_d
-    )
+    get_score_kernel[blockspergrid, threads_per_block](S_d, db1_d, af_d, s_int_d)
 
     S_d = None
     af_d = None
