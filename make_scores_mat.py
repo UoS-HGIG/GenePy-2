@@ -107,18 +107,18 @@ def get_score_kernel(S_d, db1_d, af_d, s_int_d):
 
             if s_int_d[i, j, 0] == 0:
                 db1_d[i][j] = S_d[i, s_int_d[i][j][1]] * (
-                    -math.log10(af[i, s_int_d[i][j][0]] * af[i, s_int_d[i][j][1]])
+                    -math.log10(af_d[i, s_int_d[i][j][0]] * af_d[i, s_int_d[i][j][1]])
                 )
 
             elif s_int_d[i, j, 1] == 0:
                 db1_d[i][j] = S_d[i, s_int_d[i][j][0]] * (
-                    -math.log10(af[i, s_int_d[i][j][0]] * af[i, s_int_d[i][j][1]])
+                    -math.log10(af_d[i, s_int_d[i][j][0]] * af_d[i, s_int_d[i][j][1]])
                 )
             else:
                 db1_d[i][j] = (
                     (S_d[i, s_int_d[i][j][0]] + S_d[i, s_int_d[i][j][1]])
                     * 0.5
-                    * (-math.log10(af[i, s_int_d[i][j][0]] * af[i, s_int_d[i][j][1]]))
+                    * (-math.log10(af_d[i, s_int_d[i][j][0]] * af_d[i, s_int_d[i][j][1]]))
                 )
 
 
