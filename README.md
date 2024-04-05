@@ -1,6 +1,7 @@
 GenePy-2.0 is gene- and region-based pathogenecity score for each individual based the carrier status of genomic variants; major updates from GenePy-1.x is 1). handling of multi-allelic loci with number of alternative alleles up to 10; 2). region-based score is encoporated; 3). computational efficiency improved with GPU-based processing option available
 
 Installation pre-requirement:
+
 1). Ensemble VEP 
 2). CADD >= 1.6
 3). Python3
