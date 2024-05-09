@@ -11,10 +11,11 @@ Installation pre-requirement:
 7). bedtools
 8). Bcftools >=1.3.1
 
-Running GenePy is by running the python make_scores_mat.py, and options can be found by -h; the input meta file is the annotated variant file from vcf, an example header of the meta file is:
+Reference file is needed for the VEP annotation and gene delegation for the calculation of gene-based GenePy score, the the bed file of user defined target regions for region-based GenePy score. Gene-based delegation can be based on the gene region, or the CCDS-based region.  CCDS-based gene delegation can be more appropriate for whole exome sequencing analysis. However, if the user's focus is on functional variants, e.g. those with CADD phred score >=15 or 20, the difference is minimal as shown by the figure below based on the Agilent SureSelect V5/6 capture kit.
+xxx
+
+Running GenePy is by running the python make_scores_mat.py, and options can be found by -h; the input meta file is the annotated variant file from vcf. Conversion from vcf to meta file can be achieved by the two pre_processing scripts: 
+1). pre_1.sh adds annotation including the CADD score and the allele frequency followed by quality control of the vcf
+2). pre_local converts the vcf to the meta file for GenePy score calculation
 
 
-
-*AF: allele frequency; AF1: AF of the 1st alternative allele; SCORE: the CADD raw score of the allele
-
-The meta file can be generated using the pre_1.sh which annotate and quality-based filter the vcf file, followed by pre_local.sh which convert the vcf file into the meta file
