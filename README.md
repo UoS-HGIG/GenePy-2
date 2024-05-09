@@ -12,10 +12,11 @@ Installation pre-requirement:
 8). Bcftools >=1.3.1
 
 Reference file is needed for the VEP annotation and gene delegation for the calculation of gene-based GenePy score, the the bed file of user defined target regions for region-based GenePy score. Gene-based delegation can be based on the gene region, or the CCDS-based region.  CCDS-based gene delegation can be more appropriate for whole exome sequencing analysis. However, if the user's focus is on functional variants, e.g. those with CADD phred score >=15 or 20, the difference is minimal as shown by the figure below based on the Agilent SureSelect V5/6 capture kit.
+
 xxx
 
 Running GenePy is by running the python make_scores_mat.py, and options can be found by -h; the input meta file is the annotated variant file from vcf. Conversion from vcf to meta file can be achieved by the two pre_processing scripts: 
 1). pre_1.sh adds annotation including the CADD score and the allele frequency followed by quality control of the vcf
 2). pre_local converts the vcf to the meta file for GenePy score calculation
 
-
+An example of an annotated vcf file and the corresponding meta file is provided in the example/ folder.
