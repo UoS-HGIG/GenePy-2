@@ -1,14 +1,23 @@
 GenePy-2.0 is gene- and region-based pathogenecity score for each individual based the carrier status of genomic variants; major updates from GenePy-1.x is 1). handling of multi-allelic loci with number of alternative alleles up to 10; 2). region-based score is encoporated; 3). computational efficiency improved with GPU-based processing option available
 
 Installation pre-requirement:
+
 1). Ensemble VEP 
+
 2). CADD >= 1.6
+
 3). Python3
+
 3). numpy==1.26.4
+
 4). pandas==2.2.1
+
 5). pyarrow==15.0.2
+
 6). numba==0.59.1
+
 7). bedtools
+
 8). Bcftools >=1.3.1
 
 Reference file is needed for the VEP annotation and gene delegation for the calculation of gene-based GenePy score, the the bed file of user defined target regions for region-based GenePy score. Gene-based delegation can be based on the gene region, or the CCDS-based region.  CCDS-based gene delegation can be more appropriate for whole exome sequencing analysis. However, if the user's focus is on functional variants, e.g. those with CADD phred score >=15 or 20, the difference is minimal as shown by the figure below based on the Agilent SureSelect V5/6 capture kit.
