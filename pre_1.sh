@@ -4,7 +4,7 @@ module load biobuilds
 
 cd ${wkdir}
 
-#bcftools view -G $1 -Ov -o p1.vcf
+bcftools view -G $1 -Ov -o p1.vcf
 ##
 #awk -F"\t" '$1 ~/#/ || length($4)>1||length($5)>1' p1.vcf | sed '3408,$s/chr//g' > p11.vcf
 ##
@@ -12,33 +12,33 @@ cd ${wkdir}
 ##CADD annoation of the variants
 #
 #module unload biobuilds
-#conda activate cadd
+conda activate cadd
 #
-#~/pirate/software/CADD-scripts/CADD.sh \
-#    -c 8 \
-#    -o wes_2023010_patch.tsv.gz p11.vcf
+~/pirate/software/CADD-scripts/CADD.sh \
+    -c 8 \
+    -o wes_2023010_patch.tsv.gz p11.vcf
 #
 #module load biobuilds
-#tabix -p vcf wes_2023010_patch.tsv.gz
+tabix -p vcf wes_2023010_patch.tsv.gz
 #
-#mv wes_2023010_patch* ~/pirate/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/
-#
-#
-#module load ensembl-vep
+mv wes_2023010_patch* ~/pirate/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/
 #
 #
-#vep -i p1.vcf \
-#    --offline \
-#    --assembly GRCh38 \
-#    --vcf \
-#    --fork 10 \
-#    --cache --force_overwrite \
-#    --pick_allele \
-#    --plugin CADD,/home/gc1a20/pirate/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/wes_2023010_patch.tsv.gz,/home/gc1a20/pirate/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/whole_genome_SNVs.tsv.gz,/home/gc1a20/pirate/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/gnomad.genomes.r3.0.indel.tsv.gz \
-#    --custom /mainfs/hgig/private/software/gnomAD/GRCh38/gnomad.genomes.v3.1.1.RF_flag.vcf.gz,gnomadRF,vcf,exact,,RF_flag \
-#    --af_gnomade --af_gnomadg \
-#    --fields "Allele,Consequence,SYMBOL,Gene,gnomADg_AF,gnomADg_NFE_AF,gnomADe_AF,gnomADe_NFE_AF,CADD_RAW,gnomadRF_RF_flag" \
-#    -o p1.vep.vcf
+module load ensembl-vep
+#
+#
+vep -i p1.vcf \
+    --offline \
+    --assembly GRCh38 \
+    --vcf \
+    --fork 10 \
+    --cache --force_overwrite \
+    --pick_allele \
+    --plugin CADD,/home/gc1a20/pirate/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/wes_2023010_patch.tsv.gz,/home/gc1a20/pirate/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/whole_genome_SNVs.tsv.gz,/home/gc1a20/pirate/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/gnomad.genomes.r3.0.indel.tsv.gz \
+    --custom /mainfs/hgig/private/software/gnomAD/GRCh38/gnomad.genomes.v3.1.1.RF_flag.vcf.gz,gnomadRF,vcf,exact,,RF_flag \
+    --af_gnomade --af_gnomadg \
+    --fields "Allele,Consequence,SYMBOL,Gene,gnomADg_AF,gnomADg_NFE_AF,gnomADe_AF,gnomADe_NFE_AF,CADD_RAW,gnomadRF_RF_flag" \
+    -o p1.vep.vcf
 
 gunzip -c $1 | grep -v '##' |cut -f 9-> p2
 grep -v '##' p1.vep.vcf >p1
