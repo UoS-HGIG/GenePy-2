@@ -20,8 +20,12 @@ awk -F"\t" '$1 ~/#/ || length($4)>1||length($5)>1' $1 | sed '3383,$s/chr//g' $1 
 
 ~/pirate/software/CADD-scripts/CADD.sh \
     -o $3 $2
-
-gunzip $3
+    
+##then put this to the CADD score database
+module load biobuilds
+bgzip $3
+tabix -p vcf $3.gz
+cp $3.gz* /mainfs/hgig/private/software/CADD-scripts/data/prescored/GRCh38_v1.6/no_anno/
 rm $2
 
 
