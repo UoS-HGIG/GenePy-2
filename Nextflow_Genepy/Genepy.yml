@@ -1,4 +1,4 @@
-name: Norm
+name: Genepy
 channels:
   - anaconda
   - conda-forge
