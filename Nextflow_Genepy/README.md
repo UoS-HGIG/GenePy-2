@@ -128,7 +128,6 @@ Specify the paths to the VEP plugin files:
 plugin1 = "${basedir}/data/whole_genome_SNVs.tsv.gz"
 plugin2 = "${basedir}/data/gnomad.genomes.r3.0.indel.tsv.gz"
 vep_plugins = "${basedir}/data/VEP_plugins-main/"
-custom1 = "/iridisfs/hgig/private/software/gnomAD/GRCh38/gnomad.genomes.v3.1.1.RF_flag.vcf.gz"
 ```
 
 #### CADD Filter
