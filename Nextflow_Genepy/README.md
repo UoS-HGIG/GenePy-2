@@ -23,13 +23,13 @@ unzip repo.zip
 ## Step 2: Extracting the Files
 Navigate into the extracted repository:
 ```bash
-cd repository-main
+cd GenePy-2-main/Nextflow_Genepy/
 ```
 
 ## Step 3: Create Conda Environment
 Create a Conda environment based on the `.yml` file provided in the repository:
 ```bash
-conda env create --file conda_lib.yml
+conda env create --file Genepy.yml
 source activate Genepy
 ```
 
