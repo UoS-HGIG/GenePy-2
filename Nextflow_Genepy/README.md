@@ -158,7 +158,6 @@ sbatch jobscript.sh
 If you use a different job scheduler, update the job script header and the `process.executor` parameter in the `nextflow.config` file accordingly.
 
 By following these steps, you will have set up and run the Genepy pipeline on your system. This pipeline will help you analyze genomic data efficiently using the provided tools and configurations.
-```
 
 ### Explanation of the Commands
 
