@@ -236,13 +236,6 @@ process Genepy_score {
 }
 
 
-
-
-
-
-
-
-
 // Define workflow
 workflow {
 
@@ -257,53 +250,25 @@ workflow {
          Samples         : ${params.vcf}
          """.stripIndent()
      
-       def chromosomeList = params.chromosomes.split(',').collect { it.trim().replaceAll('"', '') }
-       println "Chromosome list: $chromosomeList"
-       chr = channel.from(chromosomeList).map { chrx -> tuple(chrx, file(params.vcf)) }.view()
-       CADD_score(chr)
-       VEP_score(CADD_score.out.pre_proc_1)
-       Merging_chunks(VEP_score.out.vep_out.flatten().collect())
-      Pre_processing_1(Merging_chunks.out.collect().view())
-      Pre_processing_2(Pre_processing_1.out.collect().view())
-      Pre_processing_3(Pre_processing_1.out.mix(Pre_processing_2.out).collect().view())
-    
-       SplitByGene(Pre_processing_3.out.gene_list.collect())
-       tot_chunks1= SplitByGene.out.out1.mix(Pre_processing_3.out.gene_list).flatten().filter { it =~ /chunk_.*\.lst/ }.view()
-       tot_meta= SplitByGene.out.out1.mix(Pre_processing_3.out.gene_list).flatten().filter { it =~ /meta_CADD/ }.view()
-       chr = tot_chunks1
-    .combine(tot_meta)
-    .filter { chunk, meta -> chunk.name.startsWith("chunk_") && meta.name.contains("meta_CADD") }
-    .map { chunk, meta -> tuple(chunk, meta) }
-    .view()
-                               ///////////////////////////////////////////
-                              // Extract the list of chunk files and the last number
-                               //  chunk_files = tot_chunks1
-                              
-                              // Generate the new input for the next process
-                              // chunk_tuples = tot_chunks1.collect { file, idx -> [file, idx + 1] }.view()
-                              
-                              // Print the generated tuples to verify
-                               // println tot_chunks1
-                               // SplitByGene.out.collect().view()
-                               // chunk_files = tot_chunks1.flatten().collect { chunks_count -> 
-                              //     (1..chunks_count.toInteger()).collect { i -> 
-                              //         tuple( file("${params.output}/chunks/chunk_${i}.lst"),file("${params.output}/meta_CADD${params.cadd_filter}.txt" ))
-                             //    }
-                             //  }.view()
-                            
-        
-                           // Print chunk files for debugging
-    Meta_file_extraction(chr)
-                          // genepy_g2(chunk_files)
-                          // genepy_g3(chunk_files)
-     Genepy_score(Meta_file_extraction.out)
-                        // python_results2(genepy_g2.out.collect())
-                        // python_results3(genepy_g3.out.collect())
-
-                         // Run the combine_results process after all genepy processes
-                        //  combine_results(file("${params.output}/gene.lst"),genepy_g1.out.collect() , genepy_g2.out.collect() , genepy_g3.out.collect() )
-
-
+        def chromosomeList = params.chromosomes.split(',').collect { it.trim().replaceAll('"', '') }
+        println "Chromosome list: $chromosomeList"
+        chr = channel.from(chromosomeList).map { chrx -> tuple(chrx, file(params.vcf)) }.view()
+        CADD_score(chr)
+        VEP_score(CADD_score.out.pre_proc_1)
+        Merging_chunks(VEP_score.out.vep_out.flatten().collect())
+        Pre_processing_1(Merging_chunks.out.collect().view())
+        Pre_processing_2(Pre_processing_1.out.collect().view())
+        Pre_processing_3(Pre_processing_1.out.mix(Pre_processing_2.out).collect().view())
+        SplitByGene(Pre_processing_3.out.gene_list.collect())
+        tot_chunks1= SplitByGene.out.out1.mix(Pre_processing_3.out.gene_list).flatten().filter { it =~ /chunk_.*\.lst/ }.view()
+        tot_meta= SplitByGene.out.out1.mix(Pre_processing_3.out.gene_list).flatten().filter { it =~ /meta_CADD/ }.view()
+        chr = tot_chunks1
+        .combine(tot_meta)
+        .filter { chunk, meta -> chunk.name.startsWith("chunk_") && meta.name.contains("meta_CADD") }
+        .map { chunk, meta -> tuple(chunk, meta) }
+        .view()
+        Meta_file_extraction(chr)
+        Genepy_score(Meta_file_extraction.out)
 }
 
 //workflow.onError {
