@@ -8,14 +8,15 @@ This guide assumes you have `apptainer` and `conda` installed on your machine. B
 ### Using `curl`
 Download the repository as a zip file:
 ```bash
-curl -L -o repo.zip https://github.com/username/repository/archive/refs/heads/main.zip
+curl -L -o repo.zip https://github.com/UoS-HGIG/GenePy-2/archive/refs/heads/main.zip
+
 unzip repo.zip
 ```
 
 ### Using `wget`
 Alternatively, you can use `wget`:
 ```bash
-wget https://github.com/username/repository/archive/refs/heads/main.zip -O repo.zip
+wget -O repo.zip https://github.com/UoS-HGIG/GenePy-2/archive/refs/heads/main.zip
 unzip repo.zip
 ```
 
