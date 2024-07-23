@@ -8,7 +8,7 @@
 
 module load conda
 module load apptainer
-source activate Norm
+source activate Genepy
 # cd /iridisfs/hgig/private/in1f24/singularity_genepy/Nextflow/
 SCRIPT=$(readlink -f .)
 # Extract the full VCF file path
