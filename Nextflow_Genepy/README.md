@@ -67,13 +67,6 @@ nohup curl -O https://ftp.ensembl.org/pub/release-111/variation/vep/homo_sapiens
 tar -xzf homo_sapiens_vep_111_GRCh38.tar.gz
 ```
 
-### VEP Plugins
-Download and extract the VEP plugins:
-```bash
-wget -c https://github.com/Ensembl/VEP_plugins/archive/refs/heads/master.zip
-unzip master.zip
-```
-
 ## Step 5: Configure the Pipeline
 
 Navigate back to the main directory:

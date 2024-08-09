@@ -66,4 +66,4 @@ echo "Selected PROFILE: $PROFILE"
 cd $vcf_filename
 nextflow run $SCRIPT/nextflow_G.nf --chr $p --output $out_ -work-dir $SCRIPT/$vcf_filename/work -resume --enable report.overwrite -with-dag $out_/dag.png -profile $PROFILE --basedir $SCRIPT
 
-#rm -r work
+rm -r work
