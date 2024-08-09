@@ -51,8 +51,7 @@ process VEP_score {
   script:
   
     """
-     vep  -i "p1.vcf" --offline --assembly GRCh38 --vcf --fork 10 --cache --force_overwrite --pick_allele --plugin CADD,"wes.tsv.gz",${params.plugin1},${params.plugin2} --af_gnomade --af_gnomadg --fields "Allele,Consequence,SYMBOL,Gene,gnomADg_AF,gnomADg_NFE_AF,gnomADe_AF,gnomADe_NFE_AF,CADD_RAW,gnomadRF_RF_flag" -o "${chrx}.p1.vep.vcf" --dir_cache ${params.homos_vep} --dir_plugins ${params.vep_plugins} --dir ${params.homos_vep} 
-     
+    vep  -i "p1.vcf" --offline --assembly GRCh38 --vcf --fork 10 --cache --force_overwrite --pick_allele --plugin CADD,"wes.tsv.gz",${params.plugin1},${params.plugin2} --af_gnomade --af_gnomadg --custom ${params.custom1},gnomadRF,vcf,exact,,RF_flag --fields "Allele,Consequence,SYMBOL,Gene,gnomADg_AF,gnomADg_NFE_AF,gnomADe_AF,gnomADe_NFE_AF,CADD_RAW,gnomadRF_RF_flag" -o "${chrx}.p1.vep.vcf" --dir_cache ${params.homos_vep} --dir_plugins ${params.vep_plugins} --dir ${params.homos_vep}
     """
 }
 
