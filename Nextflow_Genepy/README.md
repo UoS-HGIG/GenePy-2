@@ -63,7 +63,7 @@ tar -xzf annotationsGRCh38_v1.6.tar.gz
 ### VEP Database for Homo Sapiens
 Download the VEP database for Homo Sapiens and extract it:
 ```bash
-nohup curl -O https://ftp.ensembl.org/pub/release-111/variation/vep/homo_sapiens_vep_111_GRCh38.tar.gz &
+nohup curl -O https://ftp.ensembl.org/pub/release-111/variation/indexed_vep_cache/homo_sapiens_vep_111_GRCh38.tar.gz &
 tar -xzf homo_sapiens_vep_111_GRCh38.tar.gz
 ```
 
