@@ -35,10 +35,10 @@ java -Xmx12g -jar /local/software/picard/2.18.14/picard.jar \
 bgzip $6
 tabix -p vcf $6.gz
 
-bcftools view $6.gz -R ~/ref/target_ref/xgen_plus_spikein.GRCh38.bed -Oz -o $7
+#bcftools view $6.gz -R ~/ref/target_ref/xgen_plus_spikein.GRCh38.bed -Oz -o $7
+bcftools view $6.gz -R ~/ref/target_ref/xgen_plus_spikein.GRCh38.bed -Ov -o filtered.vcf
+uniq filtered.vcf | bgzip -c > $7
 
-#mv $6.gz* ~/scratch/ukbb_vcf
-#mv $3.gz* ~/scratch/ukbb_vcf
-rm $3.gz $6.gz
+rm $3.gz $6.gz filtered.vcf
 
 
