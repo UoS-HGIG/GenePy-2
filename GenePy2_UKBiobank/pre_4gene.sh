@@ -60,7 +60,8 @@ paste alt_re csq_re |sed 's/CSQ\=//g' |while read i; do echo $i | cut -f 1 -d' '
 paste p1_re order_re |awk '$9 ~/,/' |cut -f 1-7,9 > p1_2
 
 cat p1_s p1_1 p1_2 >p1_order
-cat c1a | while read i; do grep -w "$i" p1_order;done >p1_u
+#cat c1a | while read i; do grep -w "$i" p1_order;done >p1_u
+awk 'NR==FNR{a[$1]=$0; next} {print a[$1]}' p1_order c1a >p1_u
 #cat p1_s p1_1 p1_2 |\
 #        sort -k1,1 -k2,2n |\
 #        awk -F"\t" '{print$1"_"$2"_"$4"_"$5,$6,$7,$8}' > p1_order
