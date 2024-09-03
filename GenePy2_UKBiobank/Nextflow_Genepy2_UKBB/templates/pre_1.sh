@@ -12,13 +12,17 @@ sed '/#/d' p1.vcf >p1
 
 ##variant info
 cut -f 1-2,4-5 p1 > c1
-cut -f 1-5 p1 >c1a
+cut -f 1-2,4-5 p1 | sed 's/\t/\_/g' >c1a
 
 #align the order of alt allele as appears in c1
 
 #cut -f 4 c1 >alt
 cut -f 8 p1 >c
-cut -f 3 -d';' c | sed 's/CSQ\=//g' >csq
+cut -f 3 -d';' c | sed 's/CSQ\=//g' | \
+    sed 's/-A/a/g' |\
+    sed 's/-C/c/g' |\
+    sed 's/-G/g/g' |\
+    sed 's/-T/t/g' >csq
 
 paste p1 csq | awk '$5 !~/,/' | cut -f 1-7,9 >p1_s
 awk '$5 ~/,/' p1 >p1_m
@@ -37,12 +41,10 @@ paste alt_re csq_re |sed 's/CSQ\=//g' |while read i; do echo $i | cut -f 1 -d' '
 
 paste p1_re order_re |awk '$9 ~/,/' |cut -f 1-7,9 > p1_2
 
-cat p1_s p1_1 p1_2 >p1_order
-cat c1a | while read i; do grep -w "$i" p1_order;done >p1_u
-#cat p1_s p1_1 p1_2 |\
-#        sort -k1,1 -k2,2n |\
-#        awk -F"\t" '{print$1"_"$2"_"$4"_"$5,$6,$7,$8}' > p1_order
-#join -j 1 c1a p1_order |sed 's/ /\t/g'> p1_u
+cat p1_s p1_1 p1_2 |\
+        sort -k1,1 -k2,2n |\
+            awk -F"\t" '{print$1"_"$2"_"$4"_"$5,$6,$7,$8}'  >p1_order
+awk 'NR==FNR{a[$1]=$0; next} {print a[$1]}' p1_order c1a >p1_u
 
 
 #awk 'NR==FNR{x++} END{ if(x!=FNR){print"mismatch ERROR on ma ordering"} }' p1 p1_u
@@ -74,6 +76,7 @@ perl -ne 'print join("\n", split(/\,/,$_));print("\n")' c3 |sort -u |grep -E 'lo
 cut -f 1 -d';' c | sed 's/AF\=//g' >c4a
 awk -F, -v OFS=, 'NR==FNR{if(max<10)max=10;next};
                            {NF=10}1' c4a{,} | sed 's/\,/\t/g' >c4
+
 
 
 ##raw_score_all
