@@ -13,13 +13,13 @@ nextflow.enable.dsl=2
 
 process Genepy_score {
     publishDir "${params.output}/Genepy_score/Genepy2_score/", mode: "copy", overwrite: true
-    maxForks 4
+    maxForks 3
     
     input:
     path("Meta_files")
 
     output:
-    file("*.txt")
+    path("*.txt"),optional: true
 
     script:
     """
