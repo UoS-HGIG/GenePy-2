@@ -17,7 +17,8 @@ def checkPathParamList = [
 
 
 process CADD_score {
-   publishDir "${params.output}", mode: "copy", overwrite: true
+  publishDir "${params.output}", mode: "copy", overwrite: true
+  maxForks 5
   input:
   tuple val(chrx),file(vcfFile)
 
@@ -39,6 +40,7 @@ process CADD_score {
 
 process VEP_score {
    publishDir "${params.output}", mode: "copy", overwrite: true
+   maxForks 5
 
   input:
   tuple val(chrx), path("p1.vcf"), path("wes.tsv.gz"), path("wes.tsv.gz.tbi")
@@ -56,6 +58,7 @@ process VEP_score {
 
 process Pre_processing_1 {
   publishDir "${params.output}", mode: "copy", overwrite: true
+  maxForks 5
 
   input:
   path(x)
@@ -125,6 +128,7 @@ process Pre_processing_1 {
 
 process Pre_processing_2 {
   publishDir "${params.output}", mode: "copy", overwrite: true
+  maxForks 5
 
   input:
   file("f5.vcf.gz")
@@ -144,6 +148,7 @@ process Pre_processing_2 {
 
 process Pre_processing_3 {
   publishDir "${params.output}", mode: "copy", overwrite: true
+  maxForks 5
 
   input:
   tuple path("c1"), path("c2"), path("c3"), path("c4"),path("c5"),path("c5a"),path("c5b"),path("meta_CADDALL.txt"),path("meta_CADD15.txt"),path("meta_CADD20.txt"),path("gene.lst"),path("f5.vcf.gz"),path("header.meta")
