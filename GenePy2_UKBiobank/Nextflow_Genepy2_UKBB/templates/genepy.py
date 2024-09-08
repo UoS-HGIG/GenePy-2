@@ -184,15 +184,36 @@ def score_db(
 
 def is_file_empty(file_path):
     return os.path.getsize(file_path) == 0
-    
+def is_file_empty_or_header_only(file_path):
+    with open(file_path, 'r') as f:
+        # Read the first line (assuming it's a header)
+        header = f.readline().strip()
+        second_line = f.readline().strip()
+
+        # If there's no second line or it's empty, file has only header or no data
+        if not second_line:
+            print(f"No data after header in file: {file_path}")
+            return True
+
+        # Split the header and second line to check column count consistency
+        header_columns = header.split()  # Split by default whitespace (or adjust for your delimiter)
+        second_line_columns = second_line.split()  # Adjust delimiter as needed
+
+        # Check if the number of fields/columns in the second line matches the header
+        if len(header_columns) != len(second_line_columns):
+            print(f"Mismatch between header and second line in file: {file_path}")
+            return True
+
+    return False 
+        
 directory = sys.argv[1]
 cadd=sys.argv[2]
 files_with_paths = [os.path.join(directory, file) for file in os.listdir(directory) if os.path.isfile(os.path.join(directory, file))]
 for gene in files_with_paths:
   if gene.endswith(cadd+'.meta'):
-    if is_file_empty(gene):
-        print(f"Skipping empty file: {gene}")
-        continue
+    if is_file_empty_or_header_only(gene):
+          print(f"Skipping empty file: {gene}")
+          continue
   
     file_name = os.path.basename(gene)
     gpu=0
