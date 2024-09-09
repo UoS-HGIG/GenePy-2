@@ -186,21 +186,15 @@ def is_file_empty(file_path):
     return os.path.getsize(file_path) == 0
 def is_file_empty_or_header_only(file_path):
     with open(file_path, 'r') as f:
-        # Read the first line (assuming it's a header)
-        header = f.readline().strip()
-        second_line = f.readline().strip()
+        header = f.readline().rstrip()
+        second_line = f.readline().rstrip()
 
         # If there's no second line or it's empty, file has only header or no data
         if not second_line:
             print(f"No data after header in file: {file_path}")
             return True
 
-        # Split the header and second line to check column count consistency
-        header_columns = header.split()  # Split by default whitespace (or adjust for your delimiter)
-        second_line_columns = second_line.split()  # Adjust delimiter as needed
-
-        # Check if the number of fields/columns in the second line matches the header
-        if len(header_columns) != len(second_line_columns):
+        if len(second_line) < 26  :
             print(f"Mismatch between header and second line in file: {file_path}")
             return True
 
