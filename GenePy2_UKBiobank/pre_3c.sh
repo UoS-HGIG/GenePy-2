@@ -22,7 +22,7 @@ paste $5 $2 >> $3
 
 rm $2 $5
 ### QC-based filtration modified with addtion of missingness based filtration to the original DP/AB-based filtration
-#module load biobuilds
+##module load biobuilds
 #bgzip $3
 #tabix -p vcf $3.gz
 #module load picard
