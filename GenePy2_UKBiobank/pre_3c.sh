@@ -21,24 +21,24 @@ grep -v '##' $4 >$5
 paste $5 $2 >> $3
 
 rm $2 $5
-module load biobuilds
+### QC-based filtration modified with addtion of missingness based filtration to the original DP/AB-based filtration
+#module load biobuilds
+#bgzip $3
+#tabix -p vcf $3.gz
+#module load picard
+#java -Xmx12g -jar /local/software/picard/2.18.14/picard.jar \
+#    FilterVcf \
+#    I=$3.gz O=$6 MIN_DP=8 MIN_AB=0.15
 
-bgzip $3
+bcftools +fill-tags $3 -- -t 'FORMAT/AB:1=float((AD[:1]) / (DP))' | bgzip -c > $3.gz
+rm $3
 tabix -p vcf $3.gz
-
-module load picard
-
-java -Xmx12g -jar /local/software/picard/2.18.14/picard.jar \
-    FilterVcf \
-    I=$3.gz O=$6 MIN_DP=8 MIN_AB=0.15
-
-bgzip $6
+bcftools filter -S . --include 'FORMAT/DP>=8 & FORMAT/AB>=0.15 |FORMAT/GT="0/0"' -Oz -o $6.gz $3.gz
 tabix -p vcf $6.gz
+bcftools +fill-tags $6.gz -- -t 'F_MISSING' | bcftools view -e '(CHROM=="chrY" & INFO/F_MISSING>=0.56)'| bcftools view -i 'INFO/F_MISSING<0.12' -Oz -o $7.gz
 
-#bcftools view $6.gz -R ~/ref/target_ref/xgen_plus_spikein.GRCh38.bed -Oz -o $7
-bcftools view $6.gz -R ~/ref/target_ref/xgen_plus_spikein.GRCh38.bed -Ov -o filtered.vcf
-uniq filtered.vcf | bgzip -c > $7
+tabix -p vcf $7.gz
 
-rm $3.gz $6.gz filtered.vcf
-
+bcftools view $7.gz -R ~/ref/target_ref/xgen_plus_spikein.GRCh38.bed -Oz -o $8
+rm $3.gz* $6.gz* $7.gz*
 
