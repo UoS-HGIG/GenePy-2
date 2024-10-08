@@ -35,7 +35,7 @@ rm $3
 tabix -p vcf $3.gz
 bcftools filter -S . --include 'FORMAT/DP>=8 & FORMAT/AB>=0.15 |FORMAT/GT="0/0"' -Oz -o $6.gz $3.gz
 tabix -p vcf $6.gz
-bcftools +fill-tags $6.gz -- -t 'F_MISSING' | bcftools view -e '(CHROM=="chrY" & INFO/F_MISSING>=0.56)'| bcftools view -i 'INFO/F_MISSING<0.12' -Oz -o $7.gz
+bcftools +fill-tags $6.gz -- -S ~/ref/ethnicity.txt -t 'HWE,F_MISSING' | bcftools view -e '(CHROM=="chrY" & INFO/F_MISSING>=0.56 & INFO/HWE_1>(0.05/15922704))'| bcftools view -i 'INFO/F_MISSING<0.12 & INFO/HWE_1>(0.05/15922704)' -Oz -o $7.gz
 
 tabix -p vcf $7.gz
 
