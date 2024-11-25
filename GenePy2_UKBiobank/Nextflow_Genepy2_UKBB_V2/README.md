@@ -8,7 +8,7 @@ This guide assumes you have `apptainer` and `conda` installed on your machine. B
 ### Using `curl`
 Download the repository as a zip file:
 ```bash
-curl -L -o repo.zip https://github.com/UoS-HGIG/GenePy-2/archive/refs/heads/main.zip
+curl -L -o repo.zip https://github.com/UoS-HGIG/GenePy-2/archive/refs/heads/V2.zip
 
 unzip repo.zip
 ```
@@ -16,14 +16,14 @@ unzip repo.zip
 ### Using `wget`
 Alternatively, you can use `wget`:
 ```bash
-wget -O repo.zip https://github.com/UoS-HGIG/GenePy-2/archive/refs/heads/main.zip
+wget -O repo.zip https://github.com/UoS-HGIG/GenePy-2/archive/refs/heads/V2.zip
 unzip repo.zip
 ```
 
 ## Step 2: Extracting the Files
 Navigate into the extracted repository:
 ```bash
-cd GenePy-2-main/GenePy2_UKBiobank/Nextflow_Genepy2_UKBB/
+cd GenePy-2-2/GenePy2_UKBiobank/Nextflow_Genepy2_UKBB_V2/
 ```
 
 ## Step 3: Create Conda Environment
