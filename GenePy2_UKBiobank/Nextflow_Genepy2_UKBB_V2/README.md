@@ -146,7 +146,7 @@ chunk_size = 1000
 Finally, run the job script with the Slurm job scheduler:
 ```bash
 chmod +x jobscript.sh 
-sbatch ./jobscript.sh /path/input/vcf_file_folder/
+sbatch ./jobscript.sh /path/input/vcf_file_folder/ chromosome_number(chr1,chr2,...)
 ```
 
 If you use a different job scheduler, update the job script header and the `process.executor` parameter in the `nextflow.config` file accordingly.
