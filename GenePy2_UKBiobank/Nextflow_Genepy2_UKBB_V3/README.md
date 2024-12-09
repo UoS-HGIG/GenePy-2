@@ -111,7 +111,6 @@ Keep these fields empty if this is your first time running the pipeline (contain
 ```plaintext
 cadd_  = ""
 vep_   = ""
-GATK4  = ""
 pyR    = ""
 ```
 
