@@ -81,7 +81,7 @@ mkdir -p $chr_output_directory
 #echo "$(realpath $chr_output_directory)" >> $folder_list_file
 cd $chr_output_directory 
      #Run Nextflow pipeline for the current VCF file
-nextflow run $SCRIPT/nextflow_G.nf -c $SCRIPT/nextflow.config --chr $chrom --vcf $vcf_directory  --output $chr_output_directory -work-dir $chr_output_directory/work --enable report.overwrite -with-dag $chr_output_directory/dag.png -profile $PROFILE --basedir $SCRIPT -resume
+nextflow run $SCRIPT/nextflow_G.nf -c $SCRIPT/nextflow.config --chr $chrom --vcf $vcf_directory  --output $chr_output_directory -work-dir $SCRIPT/work --enable report.overwrite -with-dag $chr_output_directory/dag.png -profile $PROFILE --basedir $SCRIPT -resume
     
 
 
