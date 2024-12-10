@@ -134,8 +134,8 @@ genepy_py = "${params.basedir}/templates/genepy.py"
 
 Finally, run the job script with the Slurm job scheduler:
 ```bash
-chmod +x jobscript.sh 
-sbatch ./jobscript.sh /path/input/vcf_file_folder/
+chmod +x split_chr.sh 
+sbatch ./split_chr.sh /path/input/vcf_file_folder/ chr_number
 ```
 
 If you use a different job scheduler, update the job script header and the `process.executor` parameter in the `nextflow.config` file accordingly.
