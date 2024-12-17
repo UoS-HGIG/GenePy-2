@@ -18,7 +18,7 @@ include { VEP_score } from "./modules/VEP"
 include { Pre_processing_1 } from "./modules/Pre_pr1"  
 include { Pre_processing_2 } from "./modules/Pre_pr2"  
 include { Pre_processing_3 } from "./modules/Pre_pr3"  
-include { ConcatenateDuplicateGenes } from "./modules/Gene_reattach"
+include { GeneReattach } from "./modules/Gene_reattach"
 include { Genepy_score } from "./modules/Genepy"
 
 
@@ -59,7 +59,7 @@ workflow {
       def metaALL = Pre_processing_3.out.meta_filesALL.collect().map { genes_list -> ["ALL",chromosomeList, genes_list] }
       x_combo= meta15.concat(meta20).concat(metaALL)
       ConcatenateDuplicateGenes(x_combo)
-      def result = ConcatenateDuplicateGenes.out.path_.flatten().map{[it]}.map { path ->
+      def result = GeneReattach.out.path_.flatten().map{[it]}.map { path ->
             path1 = path.toString()
             def chromosome = (path1 =~ /chr([1-9]|1[0-9]|2[0-4])\b/)[0][0]
             def cadd_score = (path1.contains('metafilesALL')) ? 'ALL' :
