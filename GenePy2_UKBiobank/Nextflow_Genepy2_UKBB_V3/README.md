@@ -1,5 +1,5 @@
 
-# Genepy2 Pipeline 
+# Genepy2 Pipeline on phase 2 local UKBB data
 
 This guide assumes you have `apptainer` and `conda` installed on your machine. Before running the Genepy pipeline, we need to prepare the necessary tools and environment.
 
