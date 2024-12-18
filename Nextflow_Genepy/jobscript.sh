@@ -18,7 +18,6 @@ echo $vcf_filename
 
 mkdir -p $vcf_filename
 chmod +x $SCRIPT/templates/pre_1.sh
-chmod +x $SCRIPT/templates/pre_local1.sh
 chmod +x $SCRIPT/templates/pre_local.sh
 chmod +x $SCRIPT/templates/genepy.py
 output1=$vcf_filename/Results
