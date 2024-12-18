@@ -82,6 +82,12 @@ nano nextflow.config
 ### Configuration Parameters
 Edit the following parameters in the `nextflow.config` file as needed:
 
+#### If working on Iridis6
+Add -f (for fakeroot) to every line starting with containerOptions e.g.
+```plaintext
+ containerOptions = "-B ${params.annotations_cadd}:/opt/CADD-scripts-CADD1.6/data/annotations/GRCh38_v1.6/ -f"
+```
+
 #### Input VCF File
 Specify the path to your VCF file:
 ```plaintext
@@ -120,7 +126,7 @@ Specify the paths to the VEP plugin files:
 ```plaintext
 plugin1 = "${basedir}/data/whole_genome_SNVs.tsv.gz"
 plugin2 = "${basedir}/data/gnomad.genomes.r3.0.indel.tsv.gz"
-vep_plugins = "${basedir}/data/VEP_plugins-main/"
+vep_plugins = "${basedir}/templates/Plugins"
 ```
 
 #### CADD Filter
