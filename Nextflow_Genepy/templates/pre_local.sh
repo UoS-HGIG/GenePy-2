@@ -3,9 +3,19 @@ paste meta_CADD_head.txt p > header_CADDALL.txt
 paste meta_CADD_head.txt p > header_CADD15.txt
 paste meta_CADD_head.txt p > header_CADD20.txt
 
+###sort vcf prior to generating matrix
+module load samtools
+
+bcftools sort -o f6.sorted.vcf  f6.vcf 
+
+gunzip -c f6.sorted.vcf.gz > tmp.vcf
+sort | uniq -d tmp.vcf > duplicate_lines
+wc -l duplicate_lines
+uniq tmp.vcf > f6.sorted.uniq.vcf
+rm tmp.vcf
 
 ##variant info
-grep -v '#' f6.vcf > f6
+grep -v '#' f6.sorted.uniq.vcf > f6
 cut -f 1-8 f6 >p1
 cut -f 1-2,4-5 p1 >c1
 cut -f 1-2,4-5 p1 |sed 's/\t/\_/g' >c1a
@@ -84,7 +94,7 @@ cut -f 4 -d' ' p1_u|awk -F"," '{OFS=FS}{for (i=1;i<=NF;i++) if ($i ~/\*/) $i="*|
 cut -f 2 -d'|' c_u  >c2 #Not used for GenePy
 
 ##gene with ensemblID; Note: there are 806 x-genes crossing chunks
-cut -f 1-8 f6.vcf >> f61.vcf
+cut -f 1-8 f6.sorted.uniq.vcf >> f61.vcf
 
 
 bedtools intersect \
