@@ -143,8 +143,11 @@ process Pre_processing_3 {
   tuple file("f3.vcf.gz"),file("f4.vcf.gz"),file("f4.vcf.gz.tbi"),file("p12.vcf"),file("f5.vcf"),file("f6.vcf")
   
   output:
-  tuple file("meta_CADD${params.cadd_filter}.txt"),file("gene.lst"), emit: gene_list
-  file("meta_CADD*.txt")
+  tuple file("meta_CADD15.txt"), emit: M_15
+  tuple file("meta_CADD20.txt"), emit: M_20
+  tuple file("meta_CADDALL.txt"), emit: M_ALL
+  tuple file("gene.lst"), emit: GLST
+
   shell:
     """
   bcftools view -h "f5.vcf" | grep -v "##" | cut -f 10- >p
@@ -161,10 +164,10 @@ process SplitByGene {
    publishDir "${params.output}/chunks", mode: "copy", overwrite: true
 
   input:
-  tuple file("meta_CADD*.txt"),file("gene.lst")
+  file("gene.lst")
   
   output:
-  tuple file("chunk_*.lst"),env("tot_chunks"), emit: out1
+  tuple file("chunk_*.lst"), emit: out1
   shell:
     """
     mapfile -t genes < <(grep '^ENSG' "gene.lst")
@@ -196,13 +199,13 @@ process SplitByGene {
 
 process Meta_file_extraction {
   
-    // publishDir "${params.output}/Genepy_score/Meta_files", mode: "copy", overwrite: true
+  publishDir "${params.output}/Genepy_score/${cadd_filter}", mode: "copy", overwrite: true
 
   input:
-  tuple path("chunk"),path(metaCADD)
+  tuple path("chunk"),path(metaCADD),val(cadd_filter)
   
   output:
-  path("Meta_files")
+  tuple path("Meta_files"),val(cadd_filter)
    
   
   script:
@@ -220,9 +223,11 @@ process Meta_file_extraction {
 
 
 process Genepy_score {
-    publishDir "${params.output}/Genepy_score/Genepy2_score/", mode: "copy", overwrite: true
+    publishDir "${params.output}/Genepy_score/${cadd_filter}/Genepy_score", mode: "copy", overwrite: true
+    
+
     input:
-    path("Meta_files")
+    tuple path("Meta_files"),val(cadd_filter)
 
     output:
     file("*.txt")
@@ -255,17 +260,31 @@ workflow {
         CADD_score(chr)
         VEP_score(CADD_score.out.pre_proc_1)
         Merging_chunks(VEP_score.out.vep_out.flatten().collect())
-        Pre_processing_1(Merging_chunks.out.collect().view())
-        Pre_processing_2(Pre_processing_1.out.collect().view())
-        Pre_processing_3(Pre_processing_1.out.mix(Pre_processing_2.out).collect().view())
-        SplitByGene(Pre_processing_3.out.gene_list.collect())
-        tot_chunks1= SplitByGene.out.out1.mix(Pre_processing_3.out.gene_list).flatten().filter { it =~ /chunk_.*\.lst/ }.view()
-        tot_meta= SplitByGene.out.out1.mix(Pre_processing_3.out.gene_list).flatten().filter { it =~ /meta_CADD/ }.view()
-        chr = tot_chunks1
-        .combine(tot_meta)
-        .filter { chunk, meta -> chunk.name.startsWith("chunk_") && meta.name.contains("meta_CADD") }
-        .map { chunk, meta -> tuple(chunk, meta) }
-        .view()
+        Pre_processing_1(Merging_chunks.out.collect())
+        Pre_processing_2(Pre_processing_1.out.collect())
+        Pre_processing_3(Pre_processing_1.out.mix(Pre_processing_2.out).collect())
+    
+        tot_chunks= SplitByGene(Pre_processing_3.out.GLST.collect().flatten()).flatten().view()
+        tot_meta= Pre_processing_3.out.M_15.mix(Pre_processing_3.out.M_20).mix(Pre_processing_3.out.M_ALL).view()
+        //chr = tot_chunks.combine(tot_meta)
+        //.filter { chunk, meta -> chunk.name.startsWith("chunk_") && meta.name.contains("meta_CADD") }
+        //.map { chunk, meta -> tuple(chunk, meta) }.view()
+
+
+        chr = tot_chunks.combine(tot_meta)
+    .filter { chunk, meta -> chunk.name.startsWith("chunk_") && meta.name.contains("meta_CADD") }
+    .map { chunk, meta -> 
+        def suffix = "UNKNOWN"
+        if (meta.name.toString().contains("15")) {
+            suffix = "15"
+        } else if (meta.name.toString().contains("20")) {
+            suffix = "20"
+        } else if (meta.name.toString().contains("ALL")) {
+            suffix = "ALL"
+        }
+        tuple(chunk, meta, suffix)
+    }.view()
+
         Meta_file_extraction(chr)
         Genepy_score(Meta_file_extraction.out)
 }
