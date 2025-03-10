@@ -1,6 +1,11 @@
 
 # Genepy2 Pipeline on phase 2 local UKBB data
 
+This is an updated version of the GenePy workflow. It uses a Nextflow wrapper for the modularised pipeline . This workflow accommodates genomic vcf files that have been already split into several chunks per chromosome (E.g. UKBiobank data or Genomics England 100K data). The input file are gvcfs from the data source. There are four modules: module 1 annotates all variants with their CADD score; module 2 annotates (allele frequency) using VEP; module three conducts depth and quality based filtering, conducts CADD-based stratification. This module also rejoins the variant data for any gene where its CCDS region was split by the chunking process; module 4 generates the GenePy scores for all remaining variant data for all genes for all individuals.   
+
+
+
+## Setup the enviroment
 This guide assumes you have `apptainer` and `conda` installed on your machine. Before running the Genepy pipeline, we need to prepare the necessary tools and environment.
 
 ## Step 1: Downloading the Repository
