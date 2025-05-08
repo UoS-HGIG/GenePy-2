@@ -97,11 +97,13 @@ cut -f 2 -d'|' c_u  >c2 #Not used for GenePy
 cut -f 1-8 f6.sorted.uniq.vcf >> f61.vcf
 
 
-bedtools intersect \
-    -wao \
-    -a f61.vcf \
-    -b genecode.bed |\
-    cut -f 1-5,12 >f61.bed
+cat f61.vcf | grep -v "^#" | awk 'BEGIN{OFS="\t"} {print $1, $2-1, $2, NR}' > f6.bed
+bedtools intersect -a f6.bed -b genecode.bed -wa -wb  > f61.bed
+#bedtools intersect \
+#    -wao \
+#    -a f61.vcf \
+#    -b genecode.bed |\
+#    cut -f 1-5,12 >f61.bed
 
 datamash -g 1,2,3,4,5 collapse 6 <f61.bed |\
     cut -f 6 >c3
