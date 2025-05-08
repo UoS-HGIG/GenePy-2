@@ -86,16 +86,22 @@ cut -f 2 -d'|' c_u  >c2 #Not used for GenePy
 ##gene with ensemblID; Note: there are 806 x-genes crossing chunks
 cut -f 1-8 f6.vcf >> f61.vcf
 
-cat f61.vcf | grep -v "^#" | awk 'BEGIN{OFS="\t"} {print $1, $2-1, $2, NR}' > f6.bed
-bedtools intersect -a f6.bed -b genecode.bed -wa -wb  > f61.bed
+cat f61.vcf | grep -v "^#" | awk 'BEGIN{OFS="\t"} {print $1, $2-1, $2, $3, $4, $5}' > f6.bed
+
+
+bedtools intersect -a f6.bed -b genecode.bed -wa -wb  > f612.bed
 #bedtools intersect \
 #    -wao \
 #    -a f61.vcf \
 #    -b genecode.bed |\
 #    cut -f 1-5,12 >f61.bed
 
+awk 'BEGIN{OFS="\t"} { print $1, $3, $4, $5, $6, $10;
+}' f612.bed > f61.bed
+
 datamash -g 1,2,3,4,5 collapse 6 <f61.bed |\
     cut -f 6 >c3
+
 
 perl -ne 'print join("\n", split(/\,/,$_));print("\n")' c3 |sort -u >gene.lst
 
