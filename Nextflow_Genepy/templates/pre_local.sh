@@ -8,7 +8,7 @@ module load samtools
 
 bcftools sort -o f6.sorted.vcf  f6.vcf 
 
-gunzip -c f6.sorted.vcf.gz > tmp.vcf
+gunzip -c f6.sorted.vcf > tmp.vcf
 sort | uniq -d tmp.vcf > duplicate_lines
 wc -l duplicate_lines
 uniq tmp.vcf > f6.sorted.uniq.vcf
