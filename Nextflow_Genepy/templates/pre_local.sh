@@ -5,14 +5,8 @@ paste meta_CADD_head.txt p > header_CADD20.txt
 
 ###sort vcf prior to generating matrix
 module load samtools
-
 bcftools sort -o f6.sorted.vcf  f6.vcf 
-
-gunzip -c f6.sorted.vcf > tmp.vcf
-sort | uniq -d tmp.vcf > duplicate_lines
-wc -l duplicate_lines
-uniq tmp.vcf > f6.sorted.uniq.vcf
-rm tmp.vcf
+sort -u -k1,6 f6.sorted.vcf > f6.sorted.uniq.vcf
 
 ##variant info
 grep -v '#' f6.sorted.uniq.vcf > f6
