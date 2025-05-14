@@ -47,7 +47,7 @@ paste p1_m order |awk '$9 !~/\|/' |cut -f 5 > alt_re
 paste p1_m order |awk '$9 !~/\|/' |cut -f 1-8 > p1_re ###???
 paste p1_m order |awk '$9 !~/\|/' | \
     cut -f 8 | \
-    awk -F";" '{for (i=1;i<=NF;i++) if ($i ~/CSQ\=/) print$i}' p1 |sed 's/CSQ\=//g' >csq_re
+    awk -F";" '{for (i=1;i<=NF;i++) if ($i ~/CSQ\=/) print$i}' |sed 's/CSQ\=//g' >csq_re
 paste p1_m order |awk '$9 ~/\|/' |cut -f 1-7,9 > p1_1 #fixed
 
 paste alt_re csq_re |while read i
