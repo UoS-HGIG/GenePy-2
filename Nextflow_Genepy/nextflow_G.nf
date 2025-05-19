@@ -198,34 +198,26 @@ process SplitByGene {
 }
 
 process Meta_file_extraction {
-  
-  publishDir "${params.output}/Genepy_score/${cadd_filter}", mode: "copy", overwrite: true
-
+  publishDir "${params.output}/Genepy_score/${cadd_filter}/${chunk}", mode: "copy", overwrite: true
+  maxForks 10
   input:
-  tuple path("chunk"),path(metaCADD),val(cadd_filter)
-  
+  tuple path(chunk),path(metaCADD),val(cadd_filter)
   output:
   tuple path("Meta_files"),val(cadd_filter)
-   
-  
-  script:
+script:
     """
     mkdir -p Meta_files
     cat ${metaCADD} | head -n 1 > header.meta
-   
-    cat "chunk" | while read i; do
-    cat header.meta > "Meta_files/\${i}_.meta"
-    grep "\$i" ${metaCADD}|awk -F"\t" '{OFS=FS}{for (s=7;s<=16;s++) if(length(\$s)<1 || \$s==0) \$s="3.98e-6"}1' >> "Meta_files/\${i}_.meta"
-
-  done
+    cat ${chunk} | while read i; do
+        cat header.meta > "Meta_files/\${i}_.meta"
+        grep "\$i" ${metaCADD}|awk -F"\t" '{OFS=FS}{for (s=7;s<=16;s++) if(length(\$s)<1 || \$s==0) \$s="3.98e-6"}1' >> "Meta_files/\${i}_.meta"
+    done
     """
 }
 
-
 process Genepy_score {
     publishDir "${params.output}/Genepy_score/${cadd_filter}/Genepy_score", mode: "copy", overwrite: true
-    
-
+ 
     input:
     tuple path("Meta_files"),val(cadd_filter)
 
