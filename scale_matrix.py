@@ -20,12 +20,12 @@ scaler=MinMaxScaler()
 scaler.fit(data)
 X=pd.DataFrame(scaler.transform(data))
 X.index=index
-X.header=header
+X.columns=header
 
 qt=QuantileTransformer(n_quantiles=1000, random_state=0)
 Y=pd.DataFrame(qt.fit_transform(data))
 Y.index=index
-Y.header=header
+Y.columns=header
 
 X.to_csv(sys.argv[2], sep='\t')
 Y.to_csv(sys.argv[3], sep='\t')
