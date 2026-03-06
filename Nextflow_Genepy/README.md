@@ -63,8 +63,8 @@ tar -xzf annotationsGRCh38_v1.6.tar.gz
 ### VEP Database for Homo Sapiens
 Download the VEP database for Homo Sapiens and extract it:
 ```bash
-nohup curl -O https://ftp.ensembl.org/pub/release-111/variation/indexed_vep_cache/homo_sapiens_vep_111_GRCh38.tar.gz &
-tar -xzf homo_sapiens_vep_111_GRCh38.tar.gz
+nohup curl -O https://ftp.ensembl.org/pub/release-114/variation/indexed_vep_cache/homo_sapiens_vep_114_GRCh38.tar.gz &
+tar -xzf homo_sapiens_vep_114_GRCh38.tar.gz
 ```
 
 ## Step 5: Configure the Pipeline
@@ -177,3 +177,4 @@ By following these steps, you will have set up and run the Genepy pipeline on yo
 
 5. **Running the job script**:
    - `sbatch jobscript.sh`: Submit the job script to the Slurm job scheduler.
+
