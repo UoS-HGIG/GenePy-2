@@ -30,7 +30,7 @@ process CADD_score {
     bcftools view -G ${vcfFile} -Oz -o p1.vcf.gz
     tabix -p vcf p1.vcf.gz
     bcftools view -O z -o ${chrx}.p1.vcf p1.vcf.gz "chr${chrx}"
-    awk -F"\t" '\$1 ~/#/ || length(\$4)>1||length(\$5)>1' ${chrx}.p1.vcf | sed 's/^chr//g' > ${chrx}.p11.vcf
+    sed 's/^chr//g' ${chrx}.p1.vcf > ${chrx}.p11.vcf
     CADD.sh -c 8 -o wes_${chrx}.tsv.gz ${chrx}.p11.vcf
     tabix -p vcf wes_${chrx}.tsv.gz
     bgzip -c ${chrx}.p1.vcf > ${chrx}.p1.vcf.gz
@@ -210,7 +210,7 @@ script:
     cat ${metaCADD} | head -n 1 > header.meta
     cat ${chunk} | while read i; do
         cat header.meta > "Meta_files/\${i}_.meta"
-        grep "\$i" ${metaCADD}|awk -F"\t" '{OFS=FS}{for (s=7;s<=16;s++) if(length(\$s)<1 || \$s==0) \$s="3.98e-6"}1' >> "Meta_files/\${i}_.meta"
+        grep "\$i" ${metaCADD}|awk -F"\t" '{OFS=FS}{for (s=7;s<=16;s++) if(length(\$s)<1 || \$s==0) \$s="6.8404e-7"}1' >> "Meta_files/\${i}_.meta"
     done
     """
 }
@@ -286,3 +286,4 @@ workflow {
 //}
 
                       
+
