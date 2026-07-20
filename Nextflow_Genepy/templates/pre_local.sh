@@ -108,11 +108,99 @@ perl -ne 'print join("\n", split(/\,/,$_));print("\n")' c3 |sort -u >gene.lst
 
 
 ##AF
-cut -f 3 -d';' c_u |awk -F"|" '{OFS="\t"}{if ($5>0) print$6,$15,$24,$33,$42,$51,$60,$69,$78,$87; else print$8,$17,$26,$35,$44,$53,$62,$71,$80,$89}' >c4 # fixed
+#cut -f 3 -d';' c_u |awk -F"|" '{OFS="\t"}{if ($5>0) print$6,$15,$24,$33,$42,$51,$60,$69,$78,$87; else print$8,$17,$26,$35,$44,$53,$62,$71,$80,$89}' >c4 # fixed
+csq_f=$(zgrep "^##INFO=<ID=CSQ" f6.sorted.uniq.vcf | sed -E 's/.*Format: //; s/">.*//')
+echo "$csq_f"
+read gS gE eS eE aI < <(
+    echo "$csq_f" | tr '|' '\n' | awk '
+    /Allele$/      {aI=NR}
+    /gnomADg_AF/   {gS=NR}
+    /gnomADg_/     {gE=NR}
+    /gnomADe_AF/   {eS=NR}
+    /gnomADe_/     {eE=NR}
+    END {print gS, gE, eS, eE, aI}
+    '
+)
 
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%INFO/CSQ\n' f6.sorted.uniq.vcf |
+awk -F'\t' -v gS="$gS" -v gE="$gE" -v eS="$eS" -v eE="$eE" -v aI="$aI" '
+BEGIN{OFS="\t"}
+{
+    nalt = split($4, alts, ",")
+    ncsq = split($5, csq, ",")
+    out = ""
+    count = 0
+
+    for (a = 1; a <= nalt && a <= 10; a++) {
+        maxG = 0
+        maxE = 0
+        useG = 0
+        useE = 0
+
+        for (i=1; i<=ncsq; i++) {
+            split(csq[i], f, "|")
+            if (f[aI] != alts[a]) continue
+
+            if (f[gS] != "" && f[gS] != "." && f[gS]+0 > 0) useG = 1
+            if (f[eS] != "" && f[eS] != "." && f[eS]+0 > 0) useE = 1
+
+            for (j=gS; j<=gE; j++)
+                if (f[j] != "" && f[j] != "." && f[j]+0 > maxG) maxG = f[j]+0
+
+            for (j=eS; j<=eE; j++)
+                if (f[j] != "" && f[j] != "." && f[j]+0 > maxE) maxE = f[j]+0
+        }
+
+        val = (useG ? maxG : (useE ? maxE : 0))
+        out = out (count==0 ? "" : OFS) val
+        count++
+    }
+
+    while (count < 10) {
+        out = out OFS 0
+        count++
+    }
+
+    print out
+}' > c4
 
 ##raw_score_all
-cut -f 3 -d';' c_u |awk -F"|" '{OFS="\t"}{print$9,$18,$27,$36,$45,$54,$63,$72,$81,$90}' >c5
+#cut -f 3 -d';' c_u |awk -F"|" '{OFS="\t"}{print$9,$18,$27,$36,$45,$54,$63,$72,$81,$90}' >c5
+
+cadd_pos=$(echo "$csq_f" | tr '|' '\n' | awk '
+/^CADD_RAW$/ { print NR; exit }
+')
+
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%INFO/CSQ\n' f6.sorted.uniq.vcf |
+awk -F'\t' -v p="$cadd_pos" '
+BEGIN { OFS="\t" }
+{
+    n = split($4, alts, ",")
+    m = split($5, csq, ",")
+    out = ""
+    count = 0
+
+    for (a = 1; a <= n  && a <= 10 ; a++) {
+        val = ""
+        for (i = 1; i <= m; i++) {
+            split(csq[i], f, "|")
+            if (f[1] == alts[a]) {
+                if (p <= length(f) && f[p] != "" && f[p] != ".") val = f[p]
+                break
+            }
+        }
+        out = out (count == 0 ? "" : OFS) val
+        count++
+    }
+
+    while (count < 10) {
+        out = out OFS ""
+        count++
+    }
+
+    print out
+}' > c5
+#echo "$cadd_pos"
 
 ##phred_score >=15, which set smaller scores as 0
 awk -F"\t" '{OFS=FS}{for(i=1;i<=NF;i++)if($i<1.387112){$i="";}}1' c5 >c5a
