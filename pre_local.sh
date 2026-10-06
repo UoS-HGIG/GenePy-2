@@ -2,7 +2,6 @@
 
 cd ${wkdir}
 
-
 cp header.meta meta_CADDALL.txt
 cp header.meta meta_CADD15.txt
 cp header.meta meta_CADD20.txt
@@ -78,33 +77,30 @@ cp header.meta meta_CADD20.txt
 
 #awk 'NR==FNR{a[$1]=$0; next} {print a[$1]}' p1_order c1a >p1_u
 
-
-
 cut -f 4 -d' ' p1_u|awk -F"," '{OFS=FS}{for (i=1;i<=NF;i++) if ($i ~/*/) $i="*|*|*|||||||"}1' > c_u
 
 ##allele funtional consequence
 cut -f 2 -d'|' c_u  >c2
 
 ##gene with ensemblID; Note: there are 806 x-genes crossing chunks
+#cut -f 1-8 f6.vcf > f61.vcf
+echo "##fileformat=VCFv4.2" > f61.vcf
+cut -f 1-8 f6.vcf >> f61.vcf
 
-cut -f 1-8 f6.vcf > f61.vcf
+#module load biobuilds
+#bedtools intersect \
+#    -wao \
+#    -a f61.vcf \
+#    -b ~/ref/gencode.v43.basic.p50.bed |\
+#    cut -f 1-5,12 >f61.bed
 
-module load biobuilds
-bedtools intersect \
-    -wao \
-    -a f61.vcf \
-    -b ~/ref/gencode.v43.basic.p50.bed |\
-    cut -f 1-5,12 >f61.bed
-
-
-
-~/bin/datamash-1.8/datamash -g 1,2,3,4,5 collapse 6 <f61.bed |\
-    cut -f 6 >c3
-
-
+bedtools intersect -wao -a f61.vcf -b p50.bed | grep -v '^#' | cut -f 1-5,12 > p1.bed
+~/bin/datamash-1.8/datamash -g 1,2,3,4,5 collapse 6 < p1.bed | cut -f 6 > c3
+#~/bin/datamash-1.8/datamash -g 1,2,3,4,5 collapse 6 <f61.bed |\
+#    cut -f 6 >c3
 #cut -f 3-4 -d'|' c_u|sed 's/|/_/g' >c3
-perl -ne 'print join("\n", split(/\,/,$_));print("\n")' c3 |sort -u >gene.lst
-
+#perl -ne 'print join("\n", split(/\,/,$_));print("\n")' c3 |sort -u >gene.lst
+perl -ne 'print join("\n", split(/\,/,$_));print("\n")' c3 | sort -u | grep -E 'ENSG' > gene.lst
 
 ##AF
 cut -f 3 -d';' c_u |awk -F"|" '{OFS="\t"}{if ($5>0) print$6,$15,$24,$33,$42,$51,$60,$69,$78,$87; else print$8,$17,$26,$35,$44,$53,$62,$71,$80,$89}' >c4
