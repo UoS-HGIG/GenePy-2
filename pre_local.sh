@@ -94,7 +94,7 @@ cut -f 1-8 f6 >> f61.vcf
 #    -b ~/ref/gencode.v43.basic.p50.bed |\
 #    cut -f 1-5,12 >f61.bed
 
-bedtools intersect -wao -a f61.vcf -b p50.bed | grep -v '^#' | cut -f 1-5,12 > p1.bed
+bedtools intersect -wao -a f61.vcf -b genecode.bed | grep -v '^#' | cut -f 1-5,12 > p1.bed
 ~/bin/datamash-1.8/datamash -g 1,2,3,4,5 collapse 6 < p1.bed | cut -f 6 > c3
 #~/bin/datamash-1.8/datamash -g 1,2,3,4,5 collapse 6 <f61.bed |\
 #    cut -f 6 >c3
