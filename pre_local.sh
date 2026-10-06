@@ -120,6 +120,26 @@ awk -F"," '{if ($0 !~/*/) print"0"; else for (i=1;i<=NF;i++) if ($i ~/\*/) print
 cut -f 10- f6 >x2
 paste x1 x2 |while read i; do pos=$(echo $i |cut -f 1 -d' '); echo $i | cut -f 2- -d' '| sed "s/${pos}/0/g" | sed 's/ /\t/g';done >c6
 
+files=(c1 c2 c3 c4 c5 c6)
+
+# Get the number of lines in the first file
+ref_lines=$(wc -l < "${files[0]}")
+
+aligned=true
+
+for file in "${files[@]}"; do
+    lines=$(wc -l < "$file")
+    if [[ "$lines" -ne "$ref_lines" ]]; then
+        aligned=false
+        break
+    fi
+done
+
+if $aligned; then
+    echo "All C* files have the same number of lines."
+else
+    echo "C* Files do not have the same number of lines."
+fi
 
 ##merge;
 paste c1 c2 c3 c4 c5 c6 >> meta_CADDALL.txt
