@@ -85,7 +85,7 @@ cut -f 2 -d'|' c_u  >c2
 ##gene with ensemblID; Note: there are 806 x-genes crossing chunks
 #cut -f 1-8 f6.vcf > f61.vcf
 echo "##fileformat=VCFv4.2" > f61.vcf
-cut -f 1-8 f6.vcf >> f61.vcf
+cut -f 1-8 f6 >> f61.vcf
 
 #module load biobuilds
 #bedtools intersect \
